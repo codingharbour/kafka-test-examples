@@ -3,11 +3,11 @@ package com.codingharbour.mockproducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 
-public class SomeService {
+public class ProducerAdapter {
     private final Producer<String, String> kafkaProducer;
     private final String topic;
 
-    public SomeService(Producer<String, String> kafkaProducer, String topic) {
+    public ProducerAdapter(Producer<String, String> kafkaProducer, String topic) {
         this.kafkaProducer = kafkaProducer;
         this.topic = topic;
     }

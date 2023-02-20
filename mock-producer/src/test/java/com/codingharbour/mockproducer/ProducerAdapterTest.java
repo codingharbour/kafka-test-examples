@@ -6,11 +6,11 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class SomeServiceTest {
+class ProducerAdapterTest {
 
     private static final String TOPIC = "topic1";
     MockProducer<String, String> mockProducer = new MockProducer<>(true, new StringSerializer(), new StringSerializer());
-    SomeService someService = new SomeService(mockProducer, TOPIC);
+    ProducerAdapter someService = new ProducerAdapter(mockProducer, TOPIC);
 
     @Test
     public void testWriteDataToKafka(){
