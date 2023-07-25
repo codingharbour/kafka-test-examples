@@ -1,2 +1,5 @@
 /.idea/
-/mock-producer/mock-producer.iml
+/producer/*.iml
+/consumer/*.iml
+/producer/target/
+/consumer/target/

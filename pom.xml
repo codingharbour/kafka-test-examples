@@ -23,13 +23,17 @@
     </properties>
 
     <modules>
-        <module>mock-producer</module>
-        <module>mock-consumer</module>
-        <module>integration-testing</module>
+        <module>producer</module>
+        <module>consumer</module>
     </modules>
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>1.4.8</version>
+            </dependency>
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
