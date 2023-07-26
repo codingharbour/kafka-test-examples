@@ -8,16 +8,17 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Properties;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class TransactionProcessorIntegrationTest {
 
@@ -31,6 +32,11 @@ class TransactionProcessorIntegrationTest {
         kafka.withKraft().start();
     }
 
+    @AfterEach
+    void tearDown() {
+        kafka.stop();
+    }
+
     @Test
     void testTransactionProcessing() {
         // create kafka producer
@@ -38,8 +44,8 @@ class TransactionProcessorIntegrationTest {
         TransactionProcessor processor = getTransactionProcessor(bootstrapServers);
 
         // create a few transactions
-        Double lowAmount = 50.2d;
-        Double highAmount = 250000d;
+        double lowAmount = 50.2d;
+        double highAmount = 250000d;
         Transaction regularPrioTransaction = new Transaction("user1", lowAmount);
         processor.process(regularPrioTransaction);
         Transaction highPrioTransaction = new Transaction("user2", highAmount);
@@ -48,14 +54,16 @@ class TransactionProcessorIntegrationTest {
 
 
         //let's consume messages and validate them
-        KafkaConsumer highPrioTestConsumer = getKafkaConsumer(kafka.getBootstrapServers(), "integration-test-high-prio-consumer");
-        KafkaConsumer regularTestConsumer = getKafkaConsumer(kafka.getBootstrapServers(), "integration-test-regular-consumer");
+        KafkaConsumer<String, String> highPrioTestConsumer =
+                getKafkaConsumer(kafka.getBootstrapServers(), "integration-test-high-prio-consumer");
+        KafkaConsumer<String, String> regularTestConsumer =
+                getKafkaConsumer(kafka.getBootstrapServers(), "integration-test-regular-consumer");
 
         highPrioTestConsumer.subscribe(Collections.singletonList(HIGH_PRIO_TOPIC));
         regularTestConsumer.subscribe(Collections.singletonList(REGULAR_PRIO_TOPIC));
 
-        ConsumerRecords highPrioRecords = highPrioTestConsumer.poll(Duration.ofSeconds(10));
-        ConsumerRecords regularPrioRecords = regularTestConsumer.poll(Duration.ofSeconds(10));
+        ConsumerRecords<String, String> highPrioRecords = highPrioTestConsumer.poll(Duration.ofSeconds(10));
+        ConsumerRecords<String, String> regularPrioRecords = regularTestConsumer.poll(Duration.ofSeconds(10));
 
         assertThat(highPrioRecords.count()).isEqualTo(1);
         assertThat(regularPrioRecords.count()).isEqualTo(1);
@@ -69,25 +77,23 @@ class TransactionProcessorIntegrationTest {
 
     @NotNull
     private static TransactionProcessor getTransactionProcessor(String bootstrapServers) {
-        KafkaProducer producer = getKafkaProducer(bootstrapServers);
-        TransactionProcessor processor = new TransactionProcessor(producer, HIGH_PRIO_TOPIC, REGULAR_PRIO_TOPIC);
-        return processor;
+        KafkaProducer<String, String> producer = getKafkaProducer(bootstrapServers);
+        return new TransactionProcessor(producer, HIGH_PRIO_TOPIC, REGULAR_PRIO_TOPIC);
     }
 
     @NotNull
-    private static KafkaProducer getKafkaProducer(String bootstrapServers) {
+    private static KafkaProducer<String, String> getKafkaProducer(String bootstrapServers) {
         Properties props = new Properties();
 
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
 
-        KafkaProducer producer = new KafkaProducer<>(props);
-        return producer;
+        return new KafkaProducer<>(props);
     }
 
     @NotNull
-    private static KafkaConsumer getKafkaConsumer(String bootstrapServers, String groupId) {
+    private static KafkaConsumer<String, String> getKafkaConsumer(String bootstrapServers, String groupId) {
         Properties props = new Properties();
 
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
@@ -96,7 +102,6 @@ class TransactionProcessorIntegrationTest {
         props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
-        KafkaConsumer testConsumer = new KafkaConsumer<>(props);
-        return testConsumer;
+        return new KafkaConsumer<>(props);
     }
 }
